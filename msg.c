@@ -60,23 +60,26 @@ int receive(void * self, local_id from, Message * msg) {
     size_t total = 0;
     int nbytes;
     if (from != this) {
-        while (total < head_size) {
-            nbytes = read(pipes[from][this][0], ptr + total, head_size - total);
-            if (nbytes < 0) {
-                return nbytes;
+        if (pipes[from][this]) {
+            while (total < head_size) {
+                nbytes = read(pipes[from][this][0], ptr + total, head_size - total);
+                if (nbytes <= 0) {
+                    return nbytes;
+                }
+                total += nbytes;
             }
-            total += nbytes;
-        }
-        all_size = head_size + msg->s_header.s_payload_len;
-        while (total < all_size) {
-            nbytes = read(pipes[from][this][0], ptr + total, all_size - total);
-            if (nbytes < 0) {
-                return nbytes;
+            all_size = head_size + msg->s_header.s_payload_len;
+            while (total < all_size) {
+                nbytes = read(pipes[from][this][0], ptr + total, all_size - total);
+                if (nbytes <= 0) {
+                    return nbytes;
+                }
+                total += nbytes;
             }
-            total += nbytes;
-        }
+            return total;
+        } else return -1;
     }
-    return total;
+    return -1;
 }
 
 int wait_receive(void * self, local_id from, Message * msg) {
@@ -84,7 +87,7 @@ int wait_receive(void * self, local_id from, Message * msg) {
     if ((local_id)(uint64_t) self != from) {
         while (!got_msg) {        
             int nbytes = receive(self, from, msg);
-            if (nbytes < 0 && errno != EAGAIN) {
+            if (nbytes <= 0 && errno != EAGAIN) {
                 return -1;
             } else if (nbytes > 0) {
                 got_msg = true;
@@ -102,7 +105,8 @@ int receive_any(void * self, Message * msg) {
         for (local_id from = 0; from < n + 1; ++from) {    
             if ((local_id)(uint64_t) self != from) {        
                 int nbytes = receive(self, from, msg);
-                if (nbytes < 0 && errno != EAGAIN) {
+                if (nbytes <= 0 && errno != EAGAIN) {
+                    fprintf(stderr, "cannot get mes from %d\n", from);
                     return -1;
                 } else if (nbytes > 0) {
                     got_msg = true;

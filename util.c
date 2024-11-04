@@ -57,6 +57,23 @@ void close_unused_pipes(local_id id) {
     }
 }
 
+void close_used_pipes(local_id id) {
+    for (uint32_t i = 0; i < n + 1; ++i) {
+        for(uint32_t j = 0; j < n + 1; ++j) {
+            if (i != j) {
+                if (i != id) {
+                    if (pipes[i][j][0])
+                    close(pipes[i][j][0]);
+                }
+                if (j != id) {
+                    if (pipes[i][j][1])
+                    close(pipes[i][j][1]);
+                }
+            }
+        }
+    }
+}
+
 void free_pipes(void) {
     for (uint32_t i = 0; i < n + 1; ++i) {
         for(uint32_t j = 0; j < n + 1; ++j) {

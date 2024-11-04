@@ -1,4 +1,0 @@
-0: process 0 received all STARTED messages
-4: process 0 received all DONE messages
-4: process 0 received HISTORY from 1
-4: process 0 received HISTORY from 2

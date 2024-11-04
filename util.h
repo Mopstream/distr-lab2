@@ -16,6 +16,7 @@ extern int n;
 uint32_t stoi(char* s);
 void open_pipes(void);
 void close_unused_pipes(local_id id);
+void close_used_pipes(local_id id);
 void free_pipes(void);
 int wait_receive(void * self, local_id from, Message * msg);
 void send_with_log(FILE* log, timestamp_t time, local_id id, int16_t s_type, balance_t balance);

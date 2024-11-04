@@ -1,8 +1,0 @@
-0: process 3 (pid 424878, parent 424875) has STARTED with balance $30
-0: process 3 received all STARTED messages
-2: process 3 received $ 2 from process 2
-3: process 3 transferred $ 3 to process 4
-4: process 3 received STOP
-4: process 3 has DONE with balance $29
-4: process 3 received DONE from 1
-4: process 3 received DONE from 2
