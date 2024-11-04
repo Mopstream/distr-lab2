@@ -1,19 +1,16 @@
-start
-after -p
-after check argc
-after fill balance
-after open pipes
-after open log
-before fork
-after fork
-start
-after -p
-after check argc
-after fill balance
-after open pipes
-after open log
-before fork
-after fork
-succ fork
-before fork
-after fork
+before pipes
+after pipes
+before robbery
+after robbery
+before multi stop
+after multi stop
+before multi done
+from 1 got 1
+from 2 got 1
+from 3 got 1
+from 4 got 1
+after multi done
+after time
+after log file
+after log
+before multi history

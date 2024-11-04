@@ -62,9 +62,7 @@ int receive(void * self, local_id from, Message * msg) {
     if (from != this) {
         while (total < head_size) {
             nbytes = read(pipes[from][this][0], ptr + total, head_size - total);
-            // printf ("%lu ",nbytes);
             if (nbytes < 0) {
-                // printf("Err in reading header from %d to %d\n", from, this);
                 return nbytes;
             }
             total += nbytes;
@@ -73,7 +71,6 @@ int receive(void * self, local_id from, Message * msg) {
         while (total < all_size) {
             nbytes = read(pipes[from][this][0], ptr + total, all_size - total);
             if (nbytes < 0) {
-                // printf("Err in reading body from %d to %d\n", from, this);
                 return nbytes;
             }
             total += nbytes;
@@ -87,7 +84,6 @@ int wait_receive(void * self, local_id from, Message * msg) {
     if ((local_id)(uint64_t) self != from) {
         while (!got_msg) {        
             int nbytes = receive(self, from, msg);
-            // printf("%d: nbytes %d %d\n", getpid(), nbytes, errno);
             if (nbytes < 0 && errno != EAGAIN) {
                 return -1;
             } else if (nbytes > 0) {
@@ -106,12 +102,9 @@ int receive_any(void * self, Message * msg) {
         for (local_id from = 0; from < n + 1; ++from) {    
             if ((local_id)(uint64_t) self != from) {        
                 int nbytes = receive(self, from, msg);
-                // printf("<%d> LOG receive any %d\n", getpid(), nbytes);
-                // printf("%d: nbytes %d %d\n", getpid(), nbytes, errno);
                 if (nbytes < 0 && errno != EAGAIN) {
                     return -1;
                 } else if (nbytes > 0) {
-                    // print_head(msg);
                     got_msg = true;
                     break;
                 }
@@ -126,7 +119,6 @@ void send_with_log(FILE* log, timestamp_t time, local_id id, int16_t s_type, bal
     pid_t pid = getpid();
     pid_t ppid = getppid();
     if (s_type == STARTED) {
-        // sprintf(msg->s_payload, log_started_fmt, time, id, pid, ppid, balance);
         fprintf(log, log_started_fmt, time, id, pid, ppid, balance);
         printf(log_started_fmt, time, id, pid, ppid, balance);
     }
@@ -135,7 +127,7 @@ void send_with_log(FILE* log, timestamp_t time, local_id id, int16_t s_type, bal
         printf(log_done_fmt, time, id, balance);
     }
     MessageHeader head = {
-        .s_magic = MESSAGE_MAGIC,
+        .s_magic = id,
         .s_payload_len = 0,
         .s_type = s_type,
         .s_local_time = time

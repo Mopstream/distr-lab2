@@ -56,9 +56,8 @@ void fix_history(BalanceState history[], uint32_t *len, timestamp_t time, balanc
 }
 
 int main(int argc, char *argv[]) {
-    freopen("0OUT.txt", "w", stdout);
-    freopen("0ERR.txt", "w", stderr);
     fprintf(stderr, "start\n");
+    printf("<%d> started\n", getpid());
 
     if (argc < 3) return -1;
     if (strcmp(argv[1], "-p") != 0) return -1;
@@ -72,16 +71,19 @@ int main(int argc, char *argv[]) {
     for (local_id i = 0; i < n; ++i){
         balance[i + 1] = stoi(argv[3 + i]);
     }
+
+    for (int i = 0; i < n + 1; ++i){
+        printf("%d: %d\n", i, balance[i]);
+    }
     fprintf(stderr, "after fill balance\n");
 
     open_pipes();
     fprintf(stderr, "after open pipes\n");
     FILE* events_log_file = fopen(events_log, "w");
     fprintf(stderr, "after open log\n");
-    for (local_id id = 1; id < n + 1; ++id) {
+    for (local_id id = 1; id <= n; ++id) {
         fprintf(stderr, "before fork\n");
         pid_t pid = fork();
-        fprintf(stderr, "after fork\n");
         if (pid == -1) {
             fprintf(stderr, "Error in fork\n");
             return -1;
@@ -89,10 +91,11 @@ int main(int argc, char *argv[]) {
         if (pid == 0) {
             char path[15];
             sprintf(path, "%dOUT.txt", id);
-            freopen(path, "w", stdout);
-
+            FILE* out = freopen(path, "w", stdout);
+            setvbuf(out, NULL, _IONBF, 0);
             sprintf(path, "%dERR.txt", id);
-            freopen(path, "w", stderr);
+            FILE* err = freopen(path, "w", stderr);
+            setvbuf(err, NULL, _IONBF, 0);
             close_unused_pipes(id);
 
             BalanceState s_history[MAX_T + 1]; 
@@ -112,7 +115,7 @@ int main(int argc, char *argv[]) {
                     if (msg->s_header.s_type != STARTED) {
                         printf("<%d> Error got %d mes\n", getpid(), msg->s_header.s_type);
                         free(msg);
-                        return -1;
+                        exit(-1);
                     }    
                 }
             }
@@ -154,30 +157,30 @@ int main(int argc, char *argv[]) {
                     } else {
                         printf ("<%d> ERROR TRANSFER message\n", getpid());
                         free(msg);
-                        return -1;
+                        exit(-1);
                     }
                 } else if (msg->s_header.s_type == STOP) {
                     timestamp_t time = get_physical_time();
+                    printf("%d: process %1d received STOP\n", time, id);
                     send_with_log(events_log_file, time, id, DONE, balance[id]);   
-                    printf("<%d> Received STOP\n", getpid());
                     is_done = true;
                 } else if (msg->s_header.s_type == DONE) {
+                    timestamp_t time = get_physical_time();
                     ++done_cnt;
-                    printf("<%d> Received DONE\n", getpid());
+                    printf("%d: process %1d received DONE from %d\n", time, id, msg->s_header.s_magic);
                     if (done_cnt == n - 1){
-                        timestamp_t time = get_physical_time();
                         fprintf(events_log_file, log_received_all_done_fmt, time, id);
                         printf(log_received_all_done_fmt, time, id);
                     }
                 } else {
                     printf ("%d: ERROR message with type %d\n", getpid(), msg->s_header.s_type);
                     free(msg);
-                    return -1;
+                    exit(-1);
                 }
             }
             
-
             time = get_physical_time();
+            printf("%d: process %d received all messages\n", time, id);
             fix_history(s_history, &len, time, balance[id]);
             BalanceHistory b_history = {
                 .s_id = id,
@@ -196,13 +199,19 @@ int main(int argc, char *argv[]) {
             memcpy(msg->s_payload, &b_history, size);
             send((void *)(uint64_t)id, 0, msg);
 
-            printf("<%d> free msg 178\n", getpid());
             free(msg);    
+            printf("%d: process %1d END his work\n", time, id);
             exit(0);
         } else {
             fprintf(stderr, "succ fork\n");
         }
     }
+
+    FILE* out = freopen("0OUT.txt", "w", stdout);
+    setvbuf(out, NULL, _IONBF, 0);
+    FILE* err = freopen("0ERR.txt", "w", stderr);
+    setvbuf(err, NULL, _IONBF, 0);
+
     fprintf(stderr, "before pipes\n");
 
     close_unused_pipes(0);
@@ -224,7 +233,7 @@ int main(int argc, char *argv[]) {
     timestamp_t time = get_physical_time();
     fprintf(events_log_file, log_received_all_started_fmt, time, 0);
     printf(log_received_all_started_fmt, time, 0);
-    fclose(events_log_file);
+
     fprintf(stderr, "before robbery\n");
     bank_robbery((void *)(uint32_t)0, n);
     fprintf(stderr, "after robbery\n");
@@ -235,7 +244,7 @@ int main(int argc, char *argv[]) {
         .s_type = STOP
     };
     msg->s_header = head;
-    print_head(msg);
+
     fprintf(stderr, "before multi stop\n");
     send_multicast((void *)(uint64_t)0, msg);
     fprintf(stderr, "after multi stop\n");
@@ -255,6 +264,7 @@ int main(int argc, char *argv[]) {
     time = get_physical_time();
     fprintf(stderr, "after time\n");
     fprintf(events_log_file, log_received_all_done_fmt, time, 0);
+    fprintf(stderr, "after log file\n");
     printf(log_received_all_done_fmt, time, 0);
     fprintf(stderr, "after log\n");
 
@@ -269,6 +279,7 @@ int main(int argc, char *argv[]) {
             free(msg);
             return -1;
         }
+        printf("%d: process %1d received HISTORY from %d\n", get_physical_time(), 0, i);
         all_history.s_history[((BalanceHistory *)msg->s_payload)->s_id - 1] = *(BalanceHistory*)msg->s_payload;
     }
     fprintf(stderr, "after multi history\n");
@@ -278,5 +289,6 @@ int main(int argc, char *argv[]) {
     for (local_id i = 1; i < n + 1; ++i) wait(NULL);
 
     free_pipes();
+    fclose(events_log_file);
     return 0;
 }
