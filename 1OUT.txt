@@ -1,0 +1,9 @@
+0: process 1 (pid 325615, parent 325614) has STARTED with balance $10
+0: process 1 received all STARTED messages
+1: process 1 transferred $ 1 to process 2
+2: process 1 received $ 1 from process 2
+2: process 1 has DONE with balance $10
+<325615> Received STOP
+<325615> Received DONE
+2: process 1 received all DONE messages
+<325615> free msg 178

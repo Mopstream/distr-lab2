@@ -1,0 +1,19 @@
+start
+after -p
+after check argc
+after fill balance
+after open pipes
+after open log
+before fork
+after fork
+start
+after -p
+after check argc
+after fill balance
+after open pipes
+after open log
+before fork
+after fork
+succ fork
+before fork
+after fork

@@ -1,0 +1,6 @@
+Opened pipe 0 -> 1, read fd = 4, write fd = 5
+Opened pipe 0 -> 2, read fd = 6, write fd = 7
+Opened pipe 1 -> 0, read fd = 8, write fd = 9
+Opened pipe 1 -> 2, read fd = 10, write fd = 11
+Opened pipe 2 -> 0, read fd = 12, write fd = 13
+Opened pipe 2 -> 1, read fd = 14, write fd = 15
